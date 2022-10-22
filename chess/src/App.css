@@ -1,0 +1,4 @@
+.gridContainer {
+    display: grid;
+    grid-template-columns: 10vh 10vh 10vh 10vh 10vh 10vh 10vh 10vh;
+}
