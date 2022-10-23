@@ -1,4 +1,4 @@
-.chessBox {
-    width: 10vh;
-    height: 10vh;
+.gridContainer {
+    display: grid;
+    grid-template-columns: 10vh 10vh 10vh 10vh 10vh 10vh 10vh 10vh;
 }
