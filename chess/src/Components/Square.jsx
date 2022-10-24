@@ -3,16 +3,17 @@ import { useEffect, useState } from 'react';
 import Piece from './Pieces';
 
 // CSS
-const box = {
-    width: "10vh",
-    height: "10vh"
-}
 
 function Square(props) {
     const pieceName = props.pieceName;
     const pieceStyle = props.pieceStyle;
 
     const id = props.id;
+    const size = props.size;
+    const box = {
+        width: size,
+        height: size
+    }
 
     const isWhite = props.isWhite;
     const HighlightedObj = props.highlighted;
@@ -22,6 +23,7 @@ function Square(props) {
     const [isHighlighted, setIsHighlighted] = useState(id in HighlightedObj);
     const [isLastMove, setIsLastMove] = useState(id in LastMoveArr);
     const [isPrevMove, setIsPrevMove] = useState(id in prevMoveArr);
+    const [pieceNameState, setPieceNameState] = useState(pieceName);
 
     // When highlighted obj changes, change the state of is highlighted
     useEffect(() => {
@@ -44,21 +46,27 @@ function Square(props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [prevMoveArr]);
 
+    // When piece name changes, change the state of piece name
+    useEffect(() => {
+        setPieceNameState(pieceName);
+    }, [pieceName]);
+
     const styleCursor = pieceName===null ? "default" : "grab";
 
     const RedWhite = "rgba(235, 97, 80, 0.8)";
     const RedBlack = "#EB6150";
     const White = "#B58863";
     const Black = "#F0D9B5";
-    const prevMoves = "rgba(204, 145, 34, 0.8)";
-    const LastMove =  "#CC9122";
+    const prevMovesWhite = "rgba(155,199,0,0.5)";
+    const prevMovesBlack = "rgba(155,199,0,0.65)";
+    const LastMove =  "rgba(20,85,30,0.65)";
 
 
     const onClick = props.onClick;
     const onContextMenu = props.onContextMenu;
 
   return (
-    <div className="square" id={id} onClick = {onClick} onContextMenu = {onContextMenu} style={{backgroundColor:  isHighlighted ? ((isWhite ? RedWhite : RedBlack)) : (isPrevMove ? prevMoves : (isLastMove ?  (LastMove) : (isWhite ? White : Black))) , cursor: styleCursor  ,...box}}><Piece name = {pieceName} style = {pieceStyle} /></div>
+    <div className="square" id={id} onClick = {onClick} onContextMenu = {onContextMenu} style={{backgroundColor:  isHighlighted ? ((isWhite ? RedWhite : RedBlack)) : (isPrevMove ? (isWhite ? prevMovesWhite : prevMovesBlack) : (isLastMove ?  (LastMove) : (isWhite ? White : Black))) , cursor: styleCursor  ,...box}}><Piece name = {pieceNameState} style = {pieceStyle} /></div>
   )
 }
 

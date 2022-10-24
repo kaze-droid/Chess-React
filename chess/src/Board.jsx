@@ -19,19 +19,25 @@ function Board(props) {
     // Obj of highlighted squares
     const [Highlighted, setHighlighted] = useState({});
 
+    // Board
     const blackPieces = ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"];
     const blackPawns = ["bP", "bP" , "bP", "bP", "bP", "bP", "bP", "bP"];
     const whitePieces = ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"];
     const whitePawns = ["wP", "wP" , "wP", "wP", "wP", "wP", "wP", "wP"];
-    const setPieces = [blackPieces, blackPawns, null, null, null, null, whitePawns, whitePieces];
+    const nullarr = [null, null, null, null, null, null, null, null];
+    const standardBoard = [blackPieces,blackPawns,nullarr,nullarr,nullarr,nullarr,whitePawns,whitePieces];
 
     const getPiece = (i,j) => {
-        if (setPieces[i] === null) {
-            return null;
-        }
-        return setPieces[i][j];
+        return board[i][j];
     }
 
+    // Board state
+    const [board, setBoard] = useState(standardBoard);
+
+    // Define size of square
+    const size = "10vh"
+
+    // Handle Onclick event
     const handleClick = (e, setLastMove, id) => {
         // Set last move
         if (e.target instanceof HTMLImageElement) {
@@ -43,13 +49,13 @@ function Board(props) {
         setHighlighted({});
     }
 
-    // set piece movement
+    // Detect piece movement and other miscellaneous
     useEffect (() => {
         // if you already clicked a piece and you are now clicking a square or enemy piece (to capture)
         if (pieceMovement.length === 2 && LastMove.lastMove !== null && (LastMove.pieceMove === null || (pieceMovement[0].split(' ')[0] !== LastMove.pieceMove.split(' ')[0]))) {
             setPieceMovement(oldArr => [...oldArr, LastMove.lastMove, LastMove.pieceMove]);
-            alert("The piece you just clicked is a " + pieceMovement[0] + " and it is located at " + pieceMovement[1] + " and you want to move it to " + LastMove.lastMove);
             // TODO: Check if move is legal from Logic.jsx if so move it
+            move(pieceMovement[1], LastMove.lastMove);
             // TODO: Check(check) ? Checkmate : None
             // TODO: Check(stalemate)
             // TODO: Check(draw) => threefold repetition, fifty-move rule, insufficient material
@@ -81,12 +87,27 @@ function Board(props) {
         }
     }
 
+    // Move piece
+    const move = (from, to) => {
+        // Convert from board notation ("E2") to index for terminalBoard(6,4)
+        const fromIndex_j = chessRow.indexOf(from[0]);
+        const fromIndex_i = 8-from[1];
+        const toIndex_j = chessRow.indexOf(to[0]);
+        const toIndex_i = 8-to[1];
+        const piece = board[fromIndex_i][fromIndex_j];
+
+        // Move piece by editing board
+        setBoard(oldBoard => [...oldBoard.slice(0,fromIndex_i), [...oldBoard[fromIndex_i].slice(0,fromIndex_j), null, ...oldBoard[fromIndex_i].slice(fromIndex_j+1)], ...oldBoard.slice(fromIndex_i+1)]);
+        setBoard(oldBoard => [...oldBoard.slice(0,toIndex_i), [...oldBoard[toIndex_i].slice(0,toIndex_j), piece, ...oldBoard[toIndex_i].slice(toIndex_j+1)], ...oldBoard.slice(toIndex_i+1)]);
+    }
+
+
     let Board = []; 
     const chessRow = ['A','B','C','D','E','F','G','H'];
     for (let i=0;i<8;i++) {
         let tmp = [];
         for (let j=0;j<8;j++) {
-            tmp.push(<Square key={chessRow[j]+""+(8-i)} id={chessRow[j]+""+(8-i)} onClick = {(event) => handleClick(event, setLastMove, chessRow[j]+""+(8-i))} onContextMenu = {(event) => {handleContextMenu(event, Highlighted, setHighlighted, chessRow[j]+""+(8-i))}} isWhite = {((i+j)%2) ? false : true} highlighted = {Highlighted} lastMove = {pieceMovement} prevMoves = {prevMoves} pieceName = {getPiece(i,j)} pieceStyle = "8bit"  />)
+            tmp.push(<Square key={chessRow[j]+""+(8-i)} id={chessRow[j]+""+(8-i)} size={size} onClick = {(event) => handleClick(event, setLastMove, chessRow[j]+""+(8-i))} onContextMenu = {(event) => {handleContextMenu(event, Highlighted, setHighlighted, chessRow[j]+""+(8-i))}} isWhite = {(i+j)%2} highlighted = {Highlighted} lastMove = {pieceMovement} prevMoves = {prevMoves} pieceName = {getPiece(i,j)} pieceStyle = "8bit"  />)
         }
         Board.push(tmp);
     }
@@ -99,9 +120,9 @@ function Board(props) {
     //     }
     // }
     // console.log(Highlighted);
-    console.log(LastMove);
-    console.log(pieceMovement);
-    console.log(prevMoves);
+    // console.log(LastMove);
+    // console.log(pieceMovement);
+    // console.log(prevMoves);
 
   return (
     <div className='gridContainer'>{Board}</div> 
