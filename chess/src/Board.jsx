@@ -2,6 +2,8 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import Square from './Components/Square';
 import './Board.css';
+import { logic } from './Utils/logic.js';
+import { toArr } from './Utils/translateMoves/toArr.js';
 
 function Board(props) {
     // props go here
@@ -53,15 +55,21 @@ function Board(props) {
     useEffect (() => {
         // if you already clicked a piece and you are now clicking a square or enemy piece (to capture)
         if (pieceMovement.length === 2 && LastMove.lastMove !== null && (LastMove.pieceMove === null || (pieceMovement[0].split(' ')[0] !== LastMove.pieceMove.split(' ')[0]))) {
-            setPieceMovement(oldArr => [...oldArr, LastMove.lastMove, LastMove.pieceMove]);
-            // TODO: Check if move is legal from Logic.jsx if so move it
-            move(pieceMovement[1], LastMove.lastMove);
-            // TODO: Check(check) ? Checkmate : None
-            // TODO: Check(stalemate)
-            // TODO: Check(draw) => threefold repetition, fifty-move rule, insufficient material
-            // TODO: Check(promotion) ? Pawn promotion popup : None
-            // Add it to prev moves
-            setPrevMoves([pieceMovement[1], LastMove.lastMove]);
+            const legalMoves = logic(pieceMovement[0],pieceMovement[1], board);
+            if (legalMoves.includes(LastMove.lastMove)) {
+                setPieceMovement(oldArr => [...oldArr, LastMove.lastMove, LastMove.pieceMove]);
+                // TODO: Check if move is legal from Logic.jsx if so move it
+                move(pieceMovement[1], LastMove.lastMove);
+                // TODO: Check(check) ? Checkmate : None
+                // TODO: Check(stalemate)
+                // TODO: Check(draw) => threefold repetition, fifty-move rule, insufficient material
+                // TODO: Check(promotion) ? Pawn promotion popup : None
+                // Add it to prev moves
+                setPrevMoves([pieceMovement[1], LastMove.lastMove]);
+            // Made an illegal move
+            } else {
+                setPieceMovement([]);
+            }
             // Reset piece movement
             // setPieceMovement([]);
         // if you are clicking an empty square
@@ -74,6 +82,8 @@ function Board(props) {
         // TODO: check if piece is the same color as the player to move
         } else if (LastMove.lastMove !== null && LastMove.pieceMove !== null) {
             setPieceMovement([LastMove.pieceMove, LastMove.lastMove]);
+            let piece = logic(LastMove.pieceMove, LastMove.lastMove, board);
+            console.log(piece);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [LastMove]);
@@ -89,11 +99,10 @@ function Board(props) {
 
     // Move piece
     const move = (from, to) => {
+        let fromIndex_i, fromIndex_j, toIndex_i, toIndex_j;
         // Convert from board notation ("E2") to index for terminalBoard(6,4)
-        const fromIndex_j = chessRow.indexOf(from[0]);
-        const fromIndex_i = 8-from[1];
-        const toIndex_j = chessRow.indexOf(to[0]);
-        const toIndex_i = 8-to[1];
+        [fromIndex_i, fromIndex_j] = [toArr(from)[0], toArr(from)[1]];
+        [toIndex_i, toIndex_j] = [toArr(to)[0], toArr(to)[1]];
         const piece = board[fromIndex_i][fromIndex_j];
 
         // Move piece by editing board

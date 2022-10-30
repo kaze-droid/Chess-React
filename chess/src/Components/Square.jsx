@@ -22,7 +22,8 @@ function Square(props) {
 
     const [isHighlighted, setIsHighlighted] = useState(id in HighlightedObj);
     const [isLastMove, setIsLastMove] = useState(id in LastMoveArr);
-    const [isPrevMove, setIsPrevMove] = useState(id in prevMoveArr);
+    const [isPrevMoveFrom, setIsPrevMoveFrom] = useState(id === prevMoveArr[0]);
+    const [isPrevMoveTo, setIsPrevMoveTo] = useState(id === prevMoveArr[1]);
     const [pieceNameState, setPieceNameState] = useState(pieceName);
 
     // When highlighted obj changes, change the state of is highlighted
@@ -41,7 +42,8 @@ function Square(props) {
 
     // When prev move arr changes, change the state of is prev move
     useEffect(() => {
-        setIsPrevMove(prevMoveArr[0] === id || prevMoveArr[1] === id);
+        setIsPrevMoveFrom(prevMoveArr[0] === id)
+        setIsPrevMoveTo(prevMoveArr[1] === id);
     // Since id will never change, we can don't have to add it to the dependency list
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [prevMoveArr]);
@@ -57,8 +59,8 @@ function Square(props) {
     const RedBlack = "#EB6150";
     const White = "#B58863";
     const Black = "#F0D9B5";
-    const prevMovesWhite = "rgba(155,199,0,0.5)";
-    const prevMovesBlack = "rgba(155,199,0,0.65)";
+    const prevMovesFrom = "rgba(155,199,0,0.5)";
+    const prevMovesTo = "rgba(155,199,0,0.8)";
     const LastMove =  "rgba(20,85,30,0.65)";
 
 
@@ -66,7 +68,7 @@ function Square(props) {
     const onContextMenu = props.onContextMenu;
 
   return (
-    <div className="square" id={id} onClick = {onClick} onContextMenu = {onContextMenu} style={{backgroundColor:  isHighlighted ? ((isWhite ? RedWhite : RedBlack)) : (isPrevMove ? (isWhite ? prevMovesWhite : prevMovesBlack) : (isLastMove ?  (LastMove) : (isWhite ? White : Black))) , cursor: styleCursor  ,...box}}><Piece name = {pieceNameState} style = {pieceStyle} /></div>
+    <div className="square" id={id} onClick = {onClick} onContextMenu = {onContextMenu} style={{backgroundColor:  isHighlighted ? ((isWhite ? RedWhite : RedBlack)) : ((isPrevMoveFrom || isPrevMoveTo) ? (isPrevMoveFrom ? prevMovesFrom : prevMovesTo) : (isLastMove ?  (LastMove) : (isWhite ? White : Black))) , cursor: styleCursor  ,...box}}><Piece name = {pieceNameState} style = {pieceStyle} /></div>
   )
 }
 
