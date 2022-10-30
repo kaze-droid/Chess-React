@@ -19,12 +19,14 @@ function Square(props) {
     const HighlightedObj = props.highlighted;
     const LastMoveArr = props.lastMove;
     const prevMoveArr = props.prevMoves;
+    const legalMoves = props.legalMoves;
 
     const [isHighlighted, setIsHighlighted] = useState(id in HighlightedObj);
     const [isLastMove, setIsLastMove] = useState(id in LastMoveArr);
     const [isPrevMoveFrom, setIsPrevMoveFrom] = useState(id === prevMoveArr[0]);
     const [isPrevMoveTo, setIsPrevMoveTo] = useState(id === prevMoveArr[1]);
     const [pieceNameState, setPieceNameState] = useState(pieceName);
+    const [isLegal, setIsLegal] = useState(legalMoves.includes(id));
 
     // When highlighted obj changes, change the state of is highlighted
     useEffect(() => {
@@ -48,6 +50,13 @@ function Square(props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [prevMoveArr]);
 
+    // When legal moves changes, change the state of is legal
+    useEffect(() => {
+        setIsLegal(legalMoves.includes(id));
+    // Since id will never change, we can don't have to add it to the dependency list
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [legalMoves]);
+
     // When piece name changes, change the state of piece name
     useEffect(() => {
         setPieceNameState(pieceName);
@@ -63,12 +72,42 @@ function Square(props) {
     const prevMovesTo = "rgba(155,199,0,0.8)";
     const LastMove =  "rgba(20,85,30,0.65)";
 
+    const legalSquare = "radial-gradient(circle at center, rgba(20,85,30,0.5) 19%, rgba(0,0,0,0) 20%)";
+    const legalCapture = "radial-gradient(transparent 0%, transparent 79%, rgba(20,85,30,0.5) 80%)";
+
+    const checkedPiece = "radial-gradient(ellipse at center, red 0%, #e70000 25%, rgba(169,0,0,0) 89%, rgba(158,0,0,0) 100%)";
+
+    const styler = () => {
+        if (isHighlighted) {
+            return isWhite ? RedWhite : RedBlack;
+        } else {
+            // If it was the most recently moved piece
+            if (isPrevMoveFrom) {
+                return prevMovesFrom;
+            } else if (isPrevMoveTo && !isLegal) {
+                return prevMovesTo;
+            } else {
+                // If it is currently selected move
+                if (isLastMove) {
+                    return LastMove;
+                } else {
+                    // Default
+                    return isWhite ? White : Black;
+                }
+            }
+        }
+    }
+
+    const special = () => {
+        return isLegal ?  (pieceNameState === null ? legalSquare : legalCapture) : null
+    }
+
 
     const onClick = props.onClick;
     const onContextMenu = props.onContextMenu;
 
   return (
-    <div className="square" id={id} onClick = {onClick} onContextMenu = {onContextMenu} style={{backgroundColor:  isHighlighted ? ((isWhite ? RedWhite : RedBlack)) : ((isPrevMoveFrom || isPrevMoveTo) ? (isPrevMoveFrom ? prevMovesFrom : prevMovesTo) : (isLastMove ?  (LastMove) : (isWhite ? White : Black))) , cursor: styleCursor  ,...box}}><Piece name = {pieceNameState} style = {pieceStyle} /></div>
+    <div className="square" id={id} onClick = {onClick} onContextMenu = {onContextMenu} style={{backgroundColor: styler() , cursor: styleCursor, backgroundImage: special(), ...box}}><Piece name = {pieceNameState} style = {pieceStyle} /></div>
   )
 }
 

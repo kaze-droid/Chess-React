@@ -3,33 +3,33 @@ import { toArr, toStd } from './translateMoves/toArr.js';
 // pass in
 /*
     - lastMove: for en passant
-    - bool castling: for whether current color can castling
     - bool check: for whether current color is in check
 */
-export function logic (long_piece,from, board){
-    const color = long_piece.split(' ')[0]
+
+// TODO: check if each move will put in the king in check. If yes, don't push that move
+// TODO: Get all possible legal moves for a given color (if len==0 return checkmate) => maybe seperate file
+export function logic (long_piece,from, board, canCastle){
+    const color = (long_piece.split(' ')[0])[0].toLowerCase()
     const piece = long_piece.split(' ')[1];
     // get all legal move for piece
-    const legalMoves = getLegalMoves(color, piece, from, board);
+    const legalMoves = getLegalMoves(color, piece, from, board, canCastle);
     return legalMoves;
 }
 
-const getLegalMoves = (color, piece, from, board) => {
+const getLegalMoves = (color, piece, from, board, canCastle) => {
     switch (piece) {
         case 'Pawn':
             return getPawnMoves(color, from, board).map(x=>toStd(x));
         case 'Rook':
             return getRookMoves(color, from, board).map(x=>toStd(x));
         case 'Knight':
-            return null;
             return getKnightMoves(color, from, board).map(x=>toStd(x));
         case 'Bishop':
             return getBishopMoves(color, from, board).map(x=>toStd(x));
         case 'Queen':
             return getQueenMoves(color, from, board).map(x=>toStd(x));
         case 'King':
-            return null;
-            return getKingMoves(from, board).map(x=>toStd(x));
+            return getKingMoves(color, from, board, canCastle).map(x=>toStd(x));
         default:
             return [];
     }
@@ -38,7 +38,7 @@ const getLegalMoves = (color, piece, from, board) => {
 const getPawnMoves = (color, from, board) => {
     let possibleMoves = [];
     // For white
-    if (color==="White") {
+    if (color==="w") {
         // moving one square forward
         if (board[toArr(from[0]+(parseInt(from[1])+1))[0]][toArr(from[0]+(parseInt(from[1])+1))[1]] === null) {
             possibleMoves.push(toArr(from[0]+(parseInt(from[1])+1)));
@@ -115,7 +115,7 @@ const getRookMoves = (color, from, board) => {
             possibleMoves.push([i+ii, j]);
             ii-=1;
         } else {
-            if (board[i+ii][j].split('')[0] !== color[0].toLowerCase()) {
+            if (board[i+ii][j].split('')[0] !== color) {
                 possibleMoves.push([i+ii, j]);
             }
             break;
@@ -130,7 +130,7 @@ const getRookMoves = (color, from, board) => {
             possibleMoves.push([i+ii, j]);
             ii+=1;
         } else {
-            if (board[i+ii][j].split('')[0] !== color[0].toLowerCase()) {
+            if (board[i+ii][j].split('')[0] !== color) {
                 possibleMoves.push([i+ii, j]);
             }
             break;
@@ -145,7 +145,7 @@ const getRookMoves = (color, from, board) => {
             possibleMoves.push([i, j+jj]);
             jj-=1;
         } else {
-            if (board[i][j+jj].split('')[0] !== color[0].toLowerCase()) {
+            if (board[i][j+jj].split('')[0] !== color) {
                 possibleMoves.push([i, j+jj]);
             }
             break;
@@ -160,7 +160,7 @@ const getRookMoves = (color, from, board) => {
             possibleMoves.push([i, j+jj]);
             jj+=1;
         } else {
-            if (board[i][j+jj].split('')[0] !== color[0].toLowerCase()) {
+            if (board[i][j+jj].split('')[0] !== color) {
                 possibleMoves.push([i, j+jj]);
             }
             break;
@@ -170,8 +170,63 @@ const getRookMoves = (color, from, board) => {
     return possibleMoves;
 }
 
-const getKnightMoves = (from, board) => {
-    return null;
+const getKnightMoves = (color,from, board) => {
+    let possibleMoves = [];
+
+    let i,j;
+    [i,j] = toArr(from);
+
+    // In a clockwise manner,
+    // i-2, j-1
+    if (i-2>=0 && i-2<8 && j-1>=0 && j-1<8) {
+        if (board[i-2][j-1] === null || board[i-2][j-1].split('')[0] !== color) {
+            possibleMoves.push([i-2, j-1]);
+        }
+    }
+    // i-2, j+1
+    if (i-2>=0 && i-2<8 && j+1>=0 && j+1<8) {
+        if (board[i-2][j+1] === null || board[i-2][j+1].split('')[0] !== color) {
+            possibleMoves.push([i-2, j+1]);
+        }
+    }
+    // j+2, i-1
+    if (i-1>=0 && i-1<8 && j+2>=0 && j+2<8) {
+        if (board[i-1][j+2] === null || board[i-1][j+2].split('')[0] !== color) {
+            possibleMoves.push([i-1, j+2]);
+        }
+    }
+    // j+2, i+1
+    if (i+1>=0 && i+1<8 && j+2>=0 && j+2<8) {
+        if (board[i+1][j+2] === null || board[i+1][j+2].split('')[0] !== color) {
+            possibleMoves.push([i+1, j+2]);
+        }
+    }
+    // i+2, j+1
+    if (i+2>=0 && i+2<8 && j+1>=0 && j+1<8) {
+        if (board[i+2][j+1] === null || board[i+2][j+1].split('')[0] !== color) {
+            possibleMoves.push([i+2, j+1]);
+        }
+    }
+    // i+2, j-1
+    if (i+2>=0 && i+2<8 && j-1>=0 && j-1<8) {
+        if (board[i+2][j-1] === null || board[i+2][j-1].split('')[0] !== color) {
+            possibleMoves.push([i+2, j-1]);
+        }
+    }
+    // j-2, i+1
+    if (i+1>=0 && i+1<8 && j-2>=0 && j-2<8) {
+        if (board[i+1][j-2] === null || board[i+1][j-2].split('')[0] !== color) {
+            possibleMoves.push([i+1, j-2]);
+        }
+    }
+    // j-2, i-1
+    if (i-1>=0 && i-1<8 && j-2>=0 && j-2<8) {
+        if (board[i-1][j-2] === null || board[i-1][j-2].split('')[0] !== color) {
+            possibleMoves.push([i-1, j-2]);
+        }
+    }
+
+    return possibleMoves;
 }
 
 const getBishopMoves = (color, from, board) => {
@@ -190,7 +245,7 @@ const getBishopMoves = (color, from, board) => {
             ii--;
             jj++;
         } else {
-            if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj].split('')[0] !== color[0].toLowerCase()) {
+            if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj].split('')[0] !== color) {
                 possibleMoves.push([i+ii, j+jj]);
             }
             break;
@@ -206,7 +261,7 @@ const getBishopMoves = (color, from, board) => {
             ii--;
             jj--;
         } else {
-            if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj].split('')[0] !== color[0].toLowerCase()) {
+            if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj].split('')[0] !== color) {
                 possibleMoves.push([i+ii, j+jj]);
             }
             break;
@@ -223,7 +278,7 @@ const getBishopMoves = (color, from, board) => {
             ii++;
             jj++;
         } else {
-            if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj].split('')[0] !== color[0].toLowerCase()) {
+            if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj].split('')[0] !== color) {
                 possibleMoves.push([i+ii, j+jj]);
             }
             break;
@@ -240,7 +295,7 @@ const getBishopMoves = (color, from, board) => {
             ii++;
             jj--;
         } else {
-            if (board[i+ii][j+jj]!== undefined &&  board[i+ii][j+jj].split('')[0] !== color[0].toLowerCase()) {
+            if (board[i+ii][j+jj]!== undefined &&  board[i+ii][j+jj].split('')[0] !== color) {
                 possibleMoves.push([i+ii, j+jj]);
             }
             break;
@@ -254,8 +309,95 @@ const getQueenMoves = (color, from, board) => {
     return getRookMoves(color, from, board).concat(getBishopMoves(color, from, board));
 }
 
-const getKingMoves = (from, board) => {
-    return null;
+const getKingMoves = (color, from, board, canCastle) => {
+    let possibleMoves = [];
+    let i,j;
+    [i,j] = toArr(from);
+
+    if (i-1>=0) {
+        if (board[i-1][j] === null || (board[i-1][j]!== undefined && board[i-1][j].split('')[0] !== color)) {
+            possibleMoves.push([i-1, j]);
+        }
+    }
+
+    if (i-1>=0 && j+1>=0) {
+        if (board[i-1][j+1] === null ||  (board[i-1][j+1]!== undefined && board[i-1][j+1].split('')[0] !== color)) {
+            possibleMoves.push([i-1, j+1]);
+        }
+    }
+
+    if (j+1>=0) {
+        if (board[i][j+1] === null || (board[i][j+1]!== undefined && board[i][j+1].split('')[0] !== color)) {
+            possibleMoves.push([i, j+1]);
+        }
+    }
+
+    if (i+1<8 && j+1<8) {
+        if (board[i+1][j+1] === null || (board[i+1][j+1]!== undefined && board[i+1][j+1].split('')[0] !== color)) {
+            possibleMoves.push([i+1, j+1]);
+        }
+    }
+
+    if (i+1<8) {
+        if (board[i+1][j] === null || (board[i+1][j]!== undefined &&board[i+1][j].split('')[0] !== color)) {
+            possibleMoves.push([i+1, j]);
+        }
+    }
+
+    if (i+1<8 && j-1>=0) {
+        if (board[i+1][j-1] === null || (board[i+1][j-1]!== undefined && board[i+1][j-1].split('')[0] !== color)) {
+            possibleMoves.push([i+1, j-1]);
+        }
+    }
+
+    if (j-1>=0) {
+        if (board[i][j-1] === null || (board[i][j-1]!== undefined && board[i][j-1].split('')[0] !== color)) {
+            possibleMoves.push([i, j-1]);
+        }
+    }
+
+    if (i-1>=0 && j-1>=0) {
+        if (board[i-1][j-1] === null || (board[i-1][j-1]!== undefined && board[i-1][j-1].split('')[0] !== color)) {
+            possibleMoves.push([i-1, j-1]);
+        }
+    }
+
+    // Castling
+    // TODO: check if any of these squares are under attack if so can't castle
+    if (color==='w') {
+        // White short
+        if (canCastle[0] === true) {
+            if (board[7][5] === null && board[7][6] === null) {
+                possibleMoves.push([7,6]);
+                possibleMoves.push([7,7]);
+            }
+        }
+        // White long
+        if (canCastle[1] === true) {
+            if (board[7][1] === null && board[7][2] === null && board[7][3] === null) {
+                possibleMoves.push([7,2]);
+                possibleMoves.push([7,0]);
+            }
+            
+        }
+    } else {
+        // Black short
+        if (canCastle[2] === true) {
+            if (board[0][5] === null && board[0][6] === null) {
+                possibleMoves.push([0,6]);
+                possibleMoves.push([0,7]);
+            }
+        }
+        // Black long
+        if (canCastle[3] === true) {
+            if (board[0][1] === null && board[0][2] === null && board[0][3] === null) {
+                possibleMoves.push([0,2]);
+                possibleMoves.push([0,0]);
+            }
+        }
+    }
+
+    return possibleMoves;
 }
 
 
