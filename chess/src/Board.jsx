@@ -70,8 +70,6 @@ function Board(props) {
             } else {
                 setPieceMovement([]);
             }
-            // Reset piece movement
-            // setPieceMovement([]);
         // if you are clicking an empty square
         } else if (LastMove.lastMove !== null && LastMove.pieceMove === null) {
             setPieceMovement([]);

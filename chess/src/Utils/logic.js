@@ -19,17 +19,14 @@ const getLegalMoves = (color, piece, from, board) => {
         case 'Pawn':
             return getPawnMoves(color, from, board).map(x=>toStd(x));
         case 'Rook':
-            return null;
-            return getRookMoves(from, board).map(x=>toStd(x));
+            return getRookMoves(color, from, board).map(x=>toStd(x));
         case 'Knight':
             return null;
-            return getKnightMoves(from, board).map(x=>toStd(x));
+            return getKnightMoves(color, from, board).map(x=>toStd(x));
         case 'Bishop':
-            return null;
-            return getBishopMoves(from, board).map(x=>toStd(x));
+            return getBishopMoves(color, from, board).map(x=>toStd(x));
         case 'Queen':
-            return null;
-            return getQueenMoves(from, board).map(x=>toStd(x));
+            return getQueenMoves(color, from, board).map(x=>toStd(x));
         case 'King':
             return null;
             return getKingMoves(from, board).map(x=>toStd(x));
@@ -104,20 +101,157 @@ const getPawnMoves = (color, from, board) => {
     return possibleMoves;
 }
 
-const getRookMoves = (from, board) => {
-    return null;
+const getRookMoves = (color, from, board) => {
+    let possibleMoves = [];
+    // check all four directions
+    let i,j;
+    [i,j] = toArr(from);
+
+    // upwards (white's perspective)
+    let ii = -1;
+
+    while (i+ii>=0) {
+        if (board[i+ii][j] === null) {
+            possibleMoves.push([i+ii, j]);
+            ii-=1;
+        } else {
+            if (board[i+ii][j].split('')[0] !== color[0].toLowerCase()) {
+                possibleMoves.push([i+ii, j]);
+            }
+            break;
+        }
+    }
+
+    // downwards (white's perspective)
+    ii = 1;
+
+    while (i+ii<8) {
+        if (board[i+ii][j] === null) {
+            possibleMoves.push([i+ii, j]);
+            ii+=1;
+        } else {
+            if (board[i+ii][j].split('')[0] !== color[0].toLowerCase()) {
+                possibleMoves.push([i+ii, j]);
+            }
+            break;
+        }
+    }
+
+    // leftwards (white's perspective)
+    let jj = -1;
+
+    while (j+jj>=0) {
+        if (board[i][j+jj] === null) {
+            possibleMoves.push([i, j+jj]);
+            jj-=1;
+        } else {
+            if (board[i][j+jj].split('')[0] !== color[0].toLowerCase()) {
+                possibleMoves.push([i, j+jj]);
+            }
+            break;
+        }
+    }
+
+    // rightwards (white's perspective)
+    jj = 1;
+    
+    while (j+jj<8) {
+        if (board[i][j+jj] === null) {
+            possibleMoves.push([i, j+jj]);
+            jj+=1;
+        } else {
+            if (board[i][j+jj].split('')[0] !== color[0].toLowerCase()) {
+                possibleMoves.push([i, j+jj]);
+            }
+            break;
+        }
+    }
+    
+    return possibleMoves;
 }
 
 const getKnightMoves = (from, board) => {
     return null;
 }
 
-const getBishopMoves = (from, board) => {
-    return null;
+const getBishopMoves = (color, from, board) => {
+    let possibleMoves = [];
+    // check all 4 diagonals
+    let i,j;
+    [i, j] = toArr(from);
+
+    // up right (white's perspective)
+    let ii = -1;
+    let jj = 1;
+
+    while (i+ii>=0 && j+jj<8) {
+        if (board[i+ii][j+jj] === null) {
+            possibleMoves.push([i+ii, j+jj]);
+            ii--;
+            jj++;
+        } else {
+            if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj].split('')[0] !== color[0].toLowerCase()) {
+                possibleMoves.push([i+ii, j+jj]);
+            }
+            break;
+        }
+    }
+    // up left (white's perspective)
+    ii = -1;
+    jj = -1;
+
+    while (i+ii>=0 && j+jj>=0) {
+        if (board[i+ii][j+jj] === null) {
+            possibleMoves.push([i+ii, j+jj]);
+            ii--;
+            jj--;
+        } else {
+            if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj].split('')[0] !== color[0].toLowerCase()) {
+                possibleMoves.push([i+ii, j+jj]);
+            }
+            break;
+        }
+    }
+
+    // down right (white's perspective)
+    ii = 1;
+    jj = 1;
+
+    while (i+ii<8 && j+jj<8) {
+        if (board[i+ii][j+jj] === null) {
+            possibleMoves.push([i+ii, j+jj]);
+            ii++;
+            jj++;
+        } else {
+            if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj].split('')[0] !== color[0].toLowerCase()) {
+                possibleMoves.push([i+ii, j+jj]);
+            }
+            break;
+        }
+    }
+
+    // down left (white's perspective)
+    ii = 1;
+    jj = -1;
+
+    while (i+ii<8 && j+jj>=0) {
+        if (board[i+ii][j+jj] === null) {
+            possibleMoves.push([i+ii, j+jj]);
+            ii++;
+            jj--;
+        } else {
+            if (board[i+ii][j+jj]!== undefined &&  board[i+ii][j+jj].split('')[0] !== color[0].toLowerCase()) {
+                possibleMoves.push([i+ii, j+jj]);
+            }
+            break;
+        }
+    }
+
+    return possibleMoves;
 }
 
-const getQueenMoves = (from, board) => {
-    return null;
+const getQueenMoves = (color, from, board) => {
+    return getRookMoves(color, from, board).concat(getBishopMoves(color, from, board));
 }
 
 const getKingMoves = (from, board) => {
