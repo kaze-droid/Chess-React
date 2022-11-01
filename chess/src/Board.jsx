@@ -4,6 +4,8 @@ import Square from './Components/Square';
 import './Board.css';
 import { logic } from './Utils/logic.js';
 import { toArr } from './Utils/translateMoves/toArr.js';
+// import { getAllLegalMoves } from './Utils/getAllLegalMoves.js';
+import { inCheck } from './Utils/inCheck.js';
 
 function Board(props) {
     // props go here
@@ -67,24 +69,26 @@ function Board(props) {
                 // Special case castling
                 if (pieceMovement[0] === "White King" || pieceMovement[0] === "Black King") {
                     castleMove();
+                // Normal move
                 } else {
                     move(pieceMovement[1], LastMove.lastMove);
-                    if (pieceMovement[0] === "White Rook") {
-                        if (pieceMovement[1] === "H1") {
-                            setCanCastle([false, canCastle[1], canCastle[2], canCastle[3]]);
-                        } else if (pieceMovement[1] === "A1") {
-                            setCanCastle([canCastle[0], false, canCastle[2], canCastle[3]]);
-                        }
-                    } else if (pieceMovement[0] === "Black Rook") {
-                        if (pieceMovement[1] === "H8") {
-                            setCanCastle([canCastle[0], canCastle[1], false, canCastle[3]]);
-                        } else if (pieceMovement[1] === "A8") {
-                            setCanCastle([canCastle[0], canCastle[1], canCastle[2], false]);
-                        }
-                    }
-                    
                 }
-                // TODO: Check(check) ? Checkmate : None
+
+                // Prevent castling if rook has moved
+                if (pieceMovement[0] === "White Rook") {
+                    if (pieceMovement[1] === "H1") {
+                        setCanCastle([false, canCastle[1], canCastle[2], canCastle[3]]);
+                    } else if (pieceMovement[1] === "A1") {
+                        setCanCastle([canCastle[0], false, canCastle[2], canCastle[3]]);
+                    }
+                } else if (pieceMovement[0] === "Black Rook") {
+                    if (pieceMovement[1] === "H8") {
+                        setCanCastle([canCastle[0], canCastle[1], false, canCastle[3]]);
+                    } else if (pieceMovement[1] === "A8") {
+                        setCanCastle([canCastle[0], canCastle[1], canCastle[2], false]);
+                    }
+                }
+
                 // TODO: Check(stalemate)
                 // TODO: Check(draw) => threefold repetition, fifty-move rule, insufficient material
                 // TODO: Check(promotion) ? Pawn promotion popup : None
@@ -119,6 +123,19 @@ function Board(props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [LastMove]);
 
+    // When the board changes, check for checks, checkmates and stalemates
+    useEffect (() => {
+        // Check for check
+        if (pieceMovement !== null && pieceMovement !== undefined && pieceMovement.length > 0) {
+            if (inCheck(board, 'w', canCastle)) {
+                alert("Black in check!");
+            } else if (inCheck(board, 'b', canCastle)) {
+                alert("White in check!");
+            }
+        }
+    // eslint-disable-next-line
+    }, [board]);
+
     const handleContextMenu = (e, Highlighted, setHighlighted, id) => {
         e.preventDefault();
         if (id in Highlighted) {
@@ -139,6 +156,8 @@ function Board(props) {
         // Move piece by editing board
         setBoard(oldBoard => [...oldBoard.slice(0,fromIndex_i), [...oldBoard[fromIndex_i].slice(0,fromIndex_j), null, ...oldBoard[fromIndex_i].slice(fromIndex_j+1)], ...oldBoard.slice(fromIndex_i+1)]);
         setBoard(oldBoard => [...oldBoard.slice(0,toIndex_i), [...oldBoard[toIndex_i].slice(0,toIndex_j), piece, ...oldBoard[toIndex_i].slice(toIndex_j+1)], ...oldBoard.slice(toIndex_i+1)]);
+
+        // TODO: Check(check) ? Checkmate : None
     }
 
     // Castling
@@ -164,6 +183,14 @@ function Board(props) {
                 move("A8", "D8");
                 move("E8", "C8");
                 setPrevMoves([pieceMovement[1], "C8"]);
+                // Normal king move
+            } else {
+                move(pieceMovement[1], LastMove.lastMove);
+                if (pieceMovement[0] === "White King") {
+                    setCanCastle([false, false, canCastle[2], canCastle[3]]);
+                } else if (pieceMovement[0] === "Black King") {
+                    setCanCastle([canCastle[0], canCastle[1], false, false]);
+                }
             }
             setLegalMoves([]);
             setPieceMovement([]);
