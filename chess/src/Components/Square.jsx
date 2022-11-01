@@ -20,6 +20,7 @@ function Square(props) {
     const LastMoveArr = props.lastMove;
     const prevMoveArr = props.prevMoves;
     const legalMoves = props.legalMoves;
+    const isCheckArr = props.isCheck;
 
     const [isHighlighted, setIsHighlighted] = useState(id in HighlightedObj);
     const [isLastMove, setIsLastMove] = useState(id in LastMoveArr);
@@ -27,6 +28,7 @@ function Square(props) {
     const [isPrevMoveTo, setIsPrevMoveTo] = useState(id === prevMoveArr[1]);
     const [pieceNameState, setPieceNameState] = useState(pieceName);
     const [isLegal, setIsLegal] = useState(legalMoves.includes(id));
+    const [inCheck, setInCheck] = useState(false);
 
     // When highlighted obj changes, change the state of is highlighted
     useEffect(() => {
@@ -61,6 +63,20 @@ function Square(props) {
     useEffect(() => {
         setPieceNameState(pieceName);
     }, [pieceName]);
+
+    // When is check changes, change the state of in check
+    useEffect(() => {
+        // console.log(isCheckArr)
+        if (isCheckArr[0] && pieceName  === 'wK') {
+            setInCheck(true);
+        } else if (isCheckArr[1] && pieceName === 'bK') {
+            setInCheck(true);
+        } else {
+            setInCheck(false);
+        }
+    // Since piece name will never change, we can don't have to add it to the dependency list
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [isCheckArr]);
 
     const styleCursor = pieceName===null ? "default" : "grab";
 
@@ -99,7 +115,15 @@ function Square(props) {
     }
 
     const special = () => {
-        return isLegal ?  (pieceNameState === null ? legalSquare : legalCapture) : null
+        if (inCheck) {
+            return checkedPiece;
+        } else {
+            if (isLegal) {
+                return pieceNameState === null ? legalSquare : legalCapture;
+            } else {
+                return null;
+            }
+        }
     }
 
 

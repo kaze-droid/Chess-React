@@ -29,6 +29,14 @@ function Board(props) {
     // arr of castling
     const [canCastle, setCanCastle] = useState([true,true, true, true]);
 
+    // arr of is check
+    const [isCheck, setIsCheck] = useState([false,false]);
+
+    // color to move
+    const [colorToMove, setColorToMove] = useState("White");
+
+
+
     // Board
     const blackPieces = ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"];
     const blackPawns = ["bP", "bP" , "bP", "bP", "bP", "bP", "bP", "bP"];
@@ -50,7 +58,7 @@ function Board(props) {
     // Handle Onclick event
     const handleClick = (e, setLastMove, id) => {
         // Set last move
-        if (e.target instanceof HTMLImageElement) {
+        if (e.target instanceof HTMLImageElement && e.target.className.split(' ')[0] === colorToMove) {
             setLastMove({lastMove:id, pieceMove: e.target.className});
         } else {
             setLastMove({lastMove:id, pieceMove: null});
@@ -89,12 +97,10 @@ function Board(props) {
                     }
                 }
 
-                // TODO: Check(stalemate)
-                // TODO: Check(draw) => threefold repetition, fifty-move rule, insufficient material
-                // TODO: Check(promotion) ? Pawn promotion popup : None
                 // Add it to prev moves
                 setPrevMoves([pieceMovement[1], LastMove.lastMove]);
                 setLegalMoves([]);
+                setColorToMove(colorToMove === "White" ? "Black" : "White");
             // Made an illegal move
             } else {
                 setPieceMovement([]);
@@ -103,15 +109,14 @@ function Board(props) {
         } else if (LastMove.lastMove !== null && LastMove.pieceMove === null) {
             setPieceMovement([]);
         // if same piece is clicked twice
-        } else if (LastMove.lastMove !== null && LastMove.pieceMove === pieceMovement[0] && LastMove.lastMove === pieceMovement[1]) {
+        } else if (LastMove.lastMove !== null && LastMove.pieceMove === pieceMovement[0] && LastMove.lastMove === pieceMovement[1]  && LastMove.pieceMove.split(' ')[0] === colorToMove) {
             setPieceMovement([]);
             setLegalMoves([]);
-        // if you are clicking a piece
-        // TODO: check if piece is the same color as the player to move
-        } else if (LastMove.lastMove !== null && LastMove.pieceMove !== null) {
 
+        // if you are clicking a different/new piece
+        } else if (LastMove.lastMove !== null && LastMove.pieceMove !== null) {
             // Special case if it is king moving to white rook
-            if (pieceMovement[0] === "White King" || pieceMovement[0] === "Black King") {
+            if ((pieceMovement[0] === "White King" && LastMove.pieceMove === "White Rook") || (pieceMovement[0] === "Black King" && LastMove.pieceMove === "Black Rook")) {
                 castleMove();
             } else {
                 setPieceMovement([LastMove.pieceMove, LastMove.lastMove]);
@@ -121,18 +126,22 @@ function Board(props) {
             console.log(logic(LastMove.pieceMove,LastMove.lastMove, board, canCastle));
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [LastMove]);
+    }, [LastMove, colorToMove]);
 
     // When the board changes, check for checks, checkmates and stalemates
     useEffect (() => {
         // Check for check
         if (pieceMovement !== null && pieceMovement !== undefined && pieceMovement.length > 0) {
-            if (inCheck(board, 'w', canCastle)) {
-                alert("Black in check!");
-            } else if (inCheck(board, 'b', canCastle)) {
-                alert("White in check!");
+            if (colorToMove === "White") {
+                setIsCheck([inCheck(board, "Black", canCastle), isCheck[1]]);
+            } else {
+                setIsCheck([isCheck[0], inCheck(board, "White", canCastle)]);
             }
         }
+
+        // TODO: Check(stalemate)
+        // TODO: Check(draw) => threefold repetition, fifty-move rule, insufficient material
+        // TODO: Check(promotion) ? Pawn promotion popup : None
     // eslint-disable-next-line
     }, [board]);
 
@@ -156,8 +165,6 @@ function Board(props) {
         // Move piece by editing board
         setBoard(oldBoard => [...oldBoard.slice(0,fromIndex_i), [...oldBoard[fromIndex_i].slice(0,fromIndex_j), null, ...oldBoard[fromIndex_i].slice(fromIndex_j+1)], ...oldBoard.slice(fromIndex_i+1)]);
         setBoard(oldBoard => [...oldBoard.slice(0,toIndex_i), [...oldBoard[toIndex_i].slice(0,toIndex_j), piece, ...oldBoard[toIndex_i].slice(toIndex_j+1)], ...oldBoard.slice(toIndex_i+1)]);
-
-        // TODO: Check(check) ? Checkmate : None
     }
 
     // Castling
@@ -203,7 +210,7 @@ function Board(props) {
     for (let i=0;i<8;i++) {
         let tmp = [];
         for (let j=0;j<8;j++) {
-            tmp.push(<Square key={chessRow[j]+""+(8-i)} id={chessRow[j]+""+(8-i)} size={size} onClick = {(event) => handleClick(event, setLastMove, chessRow[j]+""+(8-i))} onContextMenu = {(event) => {handleContextMenu(event, Highlighted, setHighlighted, chessRow[j]+""+(8-i))}} isWhite = {(i+j)%2} highlighted = {Highlighted} lastMove = {pieceMovement} prevMoves = {prevMoves} legalMoves = {legalMoves} pieceName = {getPiece(i,j)} pieceStyle = "8bit"  />)
+            tmp.push(<Square key={chessRow[j]+""+(8-i)} id={chessRow[j]+""+(8-i)} size={size} onClick = {(event) => handleClick(event, setLastMove, chessRow[j]+""+(8-i))} onContextMenu = {(event) => {handleContextMenu(event, Highlighted, setHighlighted, chessRow[j]+""+(8-i))}} isWhite = {(i+j)%2} highlighted = {Highlighted} lastMove = {pieceMovement} prevMoves = {prevMoves} isCheck = {isCheck} legalMoves = {legalMoves} pieceName = {getPiece(i,j)} pieceStyle = "8bit"  />)
         }
         Board.push(tmp);
     }
