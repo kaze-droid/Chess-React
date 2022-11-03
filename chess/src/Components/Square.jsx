@@ -66,7 +66,6 @@ function Square(props) {
 
     // When is check changes, change the state of in check
     useEffect(() => {
-        // console.log(isCheckArr)
         if (isCheckArr[0] && pieceName  === 'wK') {
             setInCheck(true);
         } else if (isCheckArr[1] && pieceName === 'bK') {

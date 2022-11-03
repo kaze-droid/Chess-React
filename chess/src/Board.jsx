@@ -4,7 +4,7 @@ import Square from './Components/Square';
 import './Board.css';
 import { logic } from './Utils/logic.js';
 import { toArr } from './Utils/translateMoves/toArr.js';
-// import { getAllLegalMoves } from './Utils/getAllLegalMoves.js';
+import { getAllLegalMoves } from './Utils/getAllLegalMoves.js';
 import { inCheck } from './Utils/inCheck.js';
 
 function Board(props) {
@@ -104,6 +104,7 @@ function Board(props) {
             // Made an illegal move
             } else {
                 setPieceMovement([]);
+                setLegalMoves([]);
             }
         // if you are clicking an empty square
         } else if (LastMove.lastMove !== null && LastMove.pieceMove === null) {
@@ -118,6 +119,7 @@ function Board(props) {
             // Special case if it is king moving to white rook
             if ((pieceMovement[0] === "White King" && LastMove.pieceMove === "White Rook") || (pieceMovement[0] === "Black King" && LastMove.pieceMove === "Black Rook")) {
                 castleMove();
+                setColorToMove(colorToMove === "White" ? "Black" : "White");
             } else {
                 setPieceMovement([LastMove.pieceMove, LastMove.lastMove]);
                 setLegalMoves(logic(LastMove.pieceMove,LastMove.lastMove, board, canCastle));
@@ -130,18 +132,27 @@ function Board(props) {
 
     // When the board changes, check for checks, checkmates and stalemates
     useEffect (() => {
-        // Check for check
-        if (pieceMovement !== null && pieceMovement !== undefined && pieceMovement.length > 0) {
-            if (colorToMove === "White") {
-                setIsCheck([inCheck(board, "Black", canCastle), isCheck[1]]);
-            } else {
-                setIsCheck([isCheck[0], inCheck(board, "White", canCastle)]);
+        // Check for checks
+            const whiteInCheck = inCheck(board, "Black", canCastle);
+            const whiteMoves = Array.from(getAllLegalMoves(board,"White", canCastle, false).values()).flat(1);
+            if (whiteMoves.length===0) {
+                if (whiteInCheck) {
+                    alert("Checkmate! Black wins!");
+                } else {
+                    alert("Stalemate!");
+                }
             }
-        }
 
-        // TODO: Check(stalemate)
-        // TODO: Check(draw) => threefold repetition, fifty-move rule, insufficient material
-        // TODO: Check(promotion) ? Pawn promotion popup : None
+            const blackInCheck = inCheck(board, "White", canCastle);
+            const blackMoves = Array.from(getAllLegalMoves(board,"Black", canCastle, false).values()).flat(1);
+            if (blackMoves.length===0) {
+                if (blackInCheck) {
+                    alert("Checkmate! White wins!");
+                } else {
+                    alert("Stalemate!");
+                }
+            }
+            setIsCheck([whiteInCheck, blackInCheck]);
     // eslint-disable-next-line
     }, [board]);
 
@@ -226,6 +237,7 @@ function Board(props) {
     // console.log(LastMove);
     // console.log(pieceMovement);
     // console.log(prevMoves);
+    console.log(isCheck);
 
   return (
     <div className='gridContainer'>{Board}</div> 
