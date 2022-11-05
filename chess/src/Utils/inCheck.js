@@ -1,7 +1,7 @@
 import { toStd } from "./translateMoves/toArr.js";
 import { getAllLegalMoves } from "./getAllLegalMoves.js";
 
-export function inCheck (board, color, canCastle) {
+export function inCheck (board, color, canCastle, prevMove) {
     let enemyKing;
     let kingLocation;
     if (color[0].toLowerCase() === 'w') {
@@ -10,7 +10,7 @@ export function inCheck (board, color, canCastle) {
         enemyKing = 'wK';
     }
     
-    const values = Array.from(getAllLegalMoves(board, color, canCastle).values());
+    const values = Array.from(getAllLegalMoves(board, color, canCastle, prevMove).values());
     for (let i=0;i<8;i++) {
         for (let j=0;j<8;j++) {
             if (board[i][j] === enemyKing) {

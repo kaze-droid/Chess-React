@@ -1,7 +1,7 @@
 import { logic } from './logic.js';
 import { toStd } from './translateMoves/toArr.js';
 
-export function getAllLegalMoves (board, color, canCastle, withoutJeopardize = true) {
+export function getAllLegalMoves (board, color, canCastle, prevMove, withoutJeopardize = true,) {
     let en_Prise = new Map();
     for (let i=0;i<8;i++) {
         for (let j=0;j<8;j++) {
@@ -17,7 +17,7 @@ export function getAllLegalMoves (board, color, canCastle, withoutJeopardize = t
                 // Opposite color cals in check which calls getAllLegalMoves etc.
 
                 if (board[i][j][1] === 'P') {
-                    const movement = logic(longPiece, from, board, canCastle, withoutJeopardize);
+                    const movement = logic(longPiece, from, board, canCastle, prevMove, withoutJeopardize);
                     let capturables = [];
                     for (let move of movement) {
                         if (move[0] !== from[0]) {
@@ -26,7 +26,7 @@ export function getAllLegalMoves (board, color, canCastle, withoutJeopardize = t
                     }
                     en_Prise.set(longPiece + '_' + from, capturables);
                 } else {
-                    en_Prise.set(longPiece + '_' + from, logic(longPiece, from, board, canCastle, withoutJeopardize));
+                    en_Prise.set(longPiece + '_' + from, logic(longPiece, from, board, canCastle, prevMove, withoutJeopardize));
                 }
             }
         }

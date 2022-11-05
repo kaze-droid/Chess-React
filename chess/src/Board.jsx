@@ -77,6 +77,14 @@ function Board(props) {
                 // Special case castling
                 if (pieceMovement[0] === "White King" || pieceMovement[0] === "Black King") {
                     castleMove();
+                // Special case en passant and normal pawn move
+                } else if (pieceMovement[0] === "White Pawn" || pieceMovement[0] === "Black Pawn") {
+                    // normal pawn move
+                    move(pieceMovement[1], LastMove.lastMove);
+                    // en passant (already moved pawn now capture the pawn behind it)
+                    if(board[toArr(LastMove.lastMove)[0]][toArr(LastMove.lastMove)[1]] === null && LastMove.lastMove[0] !== pieceMovement[1][0]) {
+                        enPassant();
+                    }
                 // Normal move
                 } else {
                     move(pieceMovement[1], LastMove.lastMove);
@@ -122,10 +130,10 @@ function Board(props) {
                 setColorToMove(colorToMove === "White" ? "Black" : "White");
             } else {
                 setPieceMovement([LastMove.pieceMove, LastMove.lastMove]);
-                setLegalMoves(logic(LastMove.pieceMove,LastMove.lastMove, board, canCastle));
+                setLegalMoves(logic(LastMove.pieceMove,LastMove.lastMove, board, canCastle, prevMoves));
             }
 
-            console.log(logic(LastMove.pieceMove,LastMove.lastMove, board, canCastle));
+            console.log(logic(LastMove.pieceMove,LastMove.lastMove, board, canCastle, prevMoves));
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [LastMove, colorToMove]);
@@ -133,8 +141,8 @@ function Board(props) {
     // When the board changes, check for checks, checkmates and stalemates
     useEffect (() => {
         // Check for checks
-            const whiteInCheck = inCheck(board, "Black", canCastle);
-            const whiteMoves = Array.from(getAllLegalMoves(board,"White", canCastle, false).values()).flat(1);
+            const whiteInCheck = inCheck(board, "Black", canCastle, prevMoves);
+            const whiteMoves = Array.from(getAllLegalMoves(board,"White", canCastle, prevMoves, false).values()).flat(1);
             if (whiteMoves.length===0) {
                 if (whiteInCheck) {
                     alert("Checkmate! Black wins!");
@@ -143,8 +151,8 @@ function Board(props) {
                 }
             }
 
-            const blackInCheck = inCheck(board, "White", canCastle);
-            const blackMoves = Array.from(getAllLegalMoves(board,"Black", canCastle, false).values()).flat(1);
+            const blackInCheck = inCheck(board, "White", canCastle, prevMoves);
+            const blackMoves = Array.from(getAllLegalMoves(board,"Black", canCastle, prevMoves, false).values()).flat(1);
             if (blackMoves.length===0) {
                 if (blackInCheck) {
                     alert("Checkmate! White wins!");
@@ -215,6 +223,18 @@ function Board(props) {
         }
     }
 
+    const enPassant = () => {
+        if (legalMoves.includes(LastMove.lastMove)) {
+            let index_i,index_j;
+            if (pieceMovement[0][0] === 'W') {
+                [index_i, index_j] = [toArr(LastMove.lastMove)[0]+1, toArr(LastMove.lastMove)[1]];
+            } else {
+                [index_i, index_j] = [toArr(LastMove.lastMove)[0]-1, toArr(LastMove.lastMove)[1]];
+            }
+            setBoard(oldBoard => [...oldBoard.slice(0,index_i), [...oldBoard[index_i].slice(0,index_j), null, ...oldBoard[index_i].slice(index_j+1)], ...oldBoard.slice(index_i+1)]);
+        }
+    }
+
 
     let Board = []; 
     const chessRow = ['A','B','C','D','E','F','G','H'];
@@ -237,7 +257,7 @@ function Board(props) {
     // console.log(LastMove);
     // console.log(pieceMovement);
     // console.log(prevMoves);
-    console.log(isCheck);
+    // console.log(isCheck);
 
   return (
     <div className='gridContainer'>{Board}</div> 

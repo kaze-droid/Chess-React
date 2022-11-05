@@ -6,46 +6,46 @@ import { jeopardize } from './jeopardize.js';
     - lastMove: for en passant
     - bool check: for whether current color is in check
 */
-export function logic (long_piece,from, board, canCastle, withoutJeopardize = false){
+export function logic (long_piece,from, board, canCastle, prevMove, withoutJeopardize = false){
     const color = (long_piece.split(' ')[0])[0].toLowerCase()
     const piece = long_piece.split(' ')[1];
 
     // get all legal move for piece
-    const legalMoves = getLegalMoves(color, piece, from, board, canCastle, withoutJeopardize);
+    const legalMoves = getLegalMoves(color, piece, from, board, canCastle, prevMove, withoutJeopardize);
     return legalMoves;
 }
 
-const getLegalMoves = (color, piece, from, board, canCastle, withoutJeopardize) => {
+const getLegalMoves = (color, piece, from, board, canCastle, prevMove, withoutJeopardize) => {
     switch (piece) {
         case 'Pawn':
-            return getPawnMoves(color, from, board, canCastle, withoutJeopardize).map(x=>toStd(x));
+            return getPawnMoves(color, from, board, canCastle, prevMove, withoutJeopardize).map(x=>toStd(x));
         case 'Rook':
-            return getRookMoves(color, from, board, canCastle, withoutJeopardize).map(x=>toStd(x));
+            return getRookMoves(color, from, board, canCastle, prevMove, withoutJeopardize).map(x=>toStd(x));
         case 'Knight':
-            return getKnightMoves(color, from, board, canCastle, withoutJeopardize).map(x=>toStd(x));
+            return getKnightMoves(color, from, board, canCastle, prevMove, withoutJeopardize).map(x=>toStd(x));
         case 'Bishop':
-            return getBishopMoves(color, from, board, canCastle, withoutJeopardize).map(x=>toStd(x));
+            return getBishopMoves(color, from, board, canCastle, prevMove, withoutJeopardize).map(x=>toStd(x));
         case 'Queen':
-            return getQueenMoves(color, from, board, canCastle, withoutJeopardize).map(x=>toStd(x));
+            return getQueenMoves(color, from, board, canCastle, prevMove, withoutJeopardize).map(x=>toStd(x));
         case 'King':
-            return getKingMoves(color, from, board, canCastle, withoutJeopardize).map(x=>toStd(x));
+            return getKingMoves(color, from, board, canCastle, prevMove, withoutJeopardize).map(x=>toStd(x));
         default:
             return [];
     }
 };
 
-const getPawnMoves = (color, from, board, canCastle, withoutJeopardize) => {
+const getPawnMoves = (color, from, board, canCastle, prevMove, withoutJeopardize) => {
     let possibleMoves = [];
     // For white
     if (color==="w") {
         // moving one square forward
         if (board[toArr(from[0]+(parseInt(from[1])+1))[0]][toArr(from[0]+(parseInt(from[1])+1))[1]] === null) {
-            if (withoutJeopardize || jeopardize(board, color, from[0]+(parseInt(from[1])), from[0]+(parseInt(from[1])+1), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from[0]+(parseInt(from[1])), from[0]+(parseInt(from[1])+1), canCastle, prevMove)) {
                 possibleMoves.push(toArr(from[0]+(parseInt(from[1])+1)));
             }
             // moving two squares forward
             if (from[1]==='2' && board[toArr(from[0]+(parseInt(from[1])+2))[0]][toArr(from[0]+(parseInt(from[1])+2))[1]] === null) {
-                if (withoutJeopardize || jeopardize(board, color, from[0]+(parseInt(from[1])), from[0]+(parseInt(from[1])+2), canCastle)) {
+                if (withoutJeopardize || jeopardize(board, color, from[0]+(parseInt(from[1])), from[0]+(parseInt(from[1])+2), canCastle, prevMove)) {
                     possibleMoves.push(toArr(from[0]+(parseInt(from[1])+2)));
                 }
             }
@@ -56,18 +56,30 @@ const getPawnMoves = (color, from, board, canCastle, withoutJeopardize) => {
         const right = [toArr(from[0]+(parseInt(from[1])+1))[0], toArr(from[0]+(parseInt(from[1])+1))[1]+1];
         // check if there is a piece there (!null) and if it is a valid move(!undefined)
         if (board[left[0]][left[1]]!==null && board[left[0]][left[1]]!==undefined && board[left[0]][left[1]][0]!=='w') {
-            if (withoutJeopardize || jeopardize(board, color, from[0]+(parseInt(from[1])), toStd(left), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd(left), canCastle, prevMove)) {
                 possibleMoves.push(left);
             }
         }
         if (board[right[0]][right[1]]!==null && board[right[0]][right[1]]!==undefined && board[right[0]][right[1]][0]!=='w') {
-            if (withoutJeopardize || jeopardize(board, color, from[0]+(parseInt(from[1])), toStd(right), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd(right), canCastle, prevMove)) {
                 possibleMoves.push(right);
             }
         }
         // END capturing
 
         // en passant
+        if (prevMove!==undefined && prevMove.length!==0) {
+            // If the previous move was a pawn move of two squares
+            if (prevMove[0][1]==='7' && prevMove[1][1]==='5' && board[toArr(prevMove[1])[0]][toArr(prevMove[1])[1]] === "bP") {
+                // check if they are one file apart and they are on the same rank
+                if ((toArr(prevMove[1])[1]-1===toArr(from)[1] || toArr(prevMove[1])[1]+1===toArr(from)[1]) && toArr(from)[0]===toArr(prevMove[1])[0]) {
+                    if (withoutJeopardize || jeopardize(board, color, from, prevMove[1][0]+(parseInt(prevMove[1][1])+1), canCastle, prevMove, true)) {
+                        possibleMoves.push(toArr(prevMove[1][0]+(parseInt(prevMove[1][1])+1)));
+                    }
+                }
+
+            }
+        }
         // END en passant
 
         // Pawn promotion
@@ -78,12 +90,12 @@ const getPawnMoves = (color, from, board, canCastle, withoutJeopardize) => {
     } else {
         // moving one square forward
         if (board[toArr(from[0]+(parseInt(from[1])-1))[0]][toArr(from[0]+(parseInt(from[1])-1))[1]] === null) {
-            if (withoutJeopardize || jeopardize(board, color, from[0]+(parseInt(from[1])), from[0]+(parseInt(from[1])-1), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from[0]+(parseInt(from[1])), from[0]+(parseInt(from[1])-1), canCastle, prevMove)) {
                 possibleMoves.push(toArr(from[0]+(parseInt(from[1])-1)));
             }
             // moving two squares forward
             if (from[1]==='7' && board[toArr(from[0]+(parseInt(from[1])-2))[0]][toArr(from[0]+(parseInt(from[1])-2))[1]] === null) {
-                if (withoutJeopardize || jeopardize(board, color, from[0]+(parseInt(from[1])), from[0]+(parseInt(from[1])-2), canCastle)) {
+                if (withoutJeopardize || jeopardize(board, color, from[0]+(parseInt(from[1])), from[0]+(parseInt(from[1])-2), canCastle, prevMove)) {
                     possibleMoves.push(toArr(from[0]+(parseInt(from[1])-2)));
                 }
             }
@@ -94,18 +106,30 @@ const getPawnMoves = (color, from, board, canCastle, withoutJeopardize) => {
         const right = [toArr(from[0]+(parseInt(from[1])-1))[0], toArr(from[0]+(parseInt(from[1])-1))[1]-1];
         // check if there is a piece there (!null) and if it is a valid move(!undefined)
         if (board[left[0]][left[1]]!==null && board[left[0]][left[1]]!==undefined && board[left[0]][left[1]][0]!=='b') {
-            if (withoutJeopardize || jeopardize(board, color, from[0]+(parseInt(from[1])), toStd(left), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd(left), canCastle, prevMove)) {
                 possibleMoves.push(left);
             }
         }
         if (board[right[0]][right[1]]!==null && board[right[0]][right[1]]!==undefined && board[right[0]][right[1]][0]!=='b') {
-            if (withoutJeopardize || jeopardize(board, color, from[0]+(parseInt(from[1])), toStd(right), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd(right), canCastle, prevMove)) {
                 possibleMoves.push(right);
             }
         }
         // END capturing
 
         // En passant
+        if (prevMove!==undefined && prevMove.length!==0) {
+            // If the previous move was a pawn move of two squares
+            if (prevMove[0][1]==='2' && prevMove[1][1]==='4' && board[toArr(prevMove[1])[0]][toArr(prevMove[1])[1]] === "wP") {
+                // check if they are one file apart and they are on the same rank
+                if ((toArr(prevMove[1])[1]-1===toArr(from)[1] || toArr(prevMove[1])[1]+1===toArr(from)[1]) && toArr(from)[0]===toArr(prevMove[1])[0]) {
+                    if (withoutJeopardize || jeopardize(board, color, from, prevMove[1][0]+(parseInt(prevMove[1][1])-1), canCastle, prevMove, true)) {
+                        possibleMoves.push(toArr(prevMove[1][0]+(parseInt(prevMove[1][1])-1)));
+                    }
+                }
+
+            }
+        }
         // END En passant
 
         // Pawn promotion
@@ -114,7 +138,7 @@ const getPawnMoves = (color, from, board, canCastle, withoutJeopardize) => {
     }
 }
 
-const getRookMoves = (color, from, board, canCastle, withoutJeopardize) => {
+const getRookMoves = (color, from, board, canCastle, prevMove, withoutJeopardize) => {
     let possibleMoves = [];
     // check all four directions
     let i,j;
@@ -125,13 +149,13 @@ const getRookMoves = (color, from, board, canCastle, withoutJeopardize) => {
 
     while (i+ii>=0) {
         if (board[i+ii][j] === null) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j]), canCastle, prevMove)) {
                 possibleMoves.push([i+ii, j]);
                 ii--;
             } else {
                 ii--;
                 if (board[i+ii][j]!== undefined && board[i+ii][j]!== null && board[i+ii][j].split('')[0] !== color) {
-                    if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j]), canCastle)) {
+                    if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j]), canCastle, prevMove)) {
                         possibleMoves.push([i+ii, j]);
                     }
                 }
@@ -139,7 +163,7 @@ const getRookMoves = (color, from, board, canCastle, withoutJeopardize) => {
             }
         } else {
             if (board[i+ii][j].split('')[0] !== color) {
-                if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j]), canCastle)) {
+                if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j]), canCastle, prevMove)) {
                     possibleMoves.push([i+ii, j]);
                 }
             }
@@ -152,13 +176,13 @@ const getRookMoves = (color, from, board, canCastle, withoutJeopardize) => {
 
     while (i+ii<8) {
         if (board[i+ii][j] === null) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j]), canCastle, prevMove)) {
                 possibleMoves.push([i+ii, j]);
                 ii++;
             } else {
                 ii++;
                 if (board[i+ii][j]!== undefined && board[i+ii][j]!== null && board[i+ii][j].split('')[0] !== color) {
-                    if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j]), canCastle)) {
+                    if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j]), canCastle, prevMove)) {
                         possibleMoves.push([i+ii, j]);
                     }
                 }
@@ -166,7 +190,7 @@ const getRookMoves = (color, from, board, canCastle, withoutJeopardize) => {
             }
         } else {
             if (board[i+ii][j].split('')[0] !== color) {
-                if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j]), canCastle)) {
+                if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j]), canCastle, prevMove)) {
                     possibleMoves.push([i+ii, j]);
                 }
             }
@@ -179,13 +203,13 @@ const getRookMoves = (color, from, board, canCastle, withoutJeopardize) => {
 
     while (j+jj>=0) {
         if (board[i][j+jj] === null) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i,j+jj]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i,j+jj]), canCastle, prevMove)) {
                 possibleMoves.push([i, j+jj]);
                 jj--;
             } else {
                 jj--;
                 if (board[i][j+jj]!== undefined && board[i][j+jj]!== null && board[i][j+jj].split('')[0] !== color) {
-                    if (withoutJeopardize || jeopardize(board, color, from, toStd([i,j+jj]), canCastle)) {
+                    if (withoutJeopardize || jeopardize(board, color, from, toStd([i,j+jj]), canCastle, prevMove)) {
                         possibleMoves.push([i, j+jj]);
                     }
                 }
@@ -193,7 +217,7 @@ const getRookMoves = (color, from, board, canCastle, withoutJeopardize) => {
             }
         } else {
             if (board[i][j+jj].split('')[0] !== color) {
-                if (withoutJeopardize || jeopardize(board, color, from, toStd([i,j+jj]), canCastle)) {
+                if (withoutJeopardize || jeopardize(board, color, from, toStd([i,j+jj]), canCastle, prevMove)) {
                     possibleMoves.push([i, j+jj]);
                 }
             }
@@ -206,13 +230,13 @@ const getRookMoves = (color, from, board, canCastle, withoutJeopardize) => {
     
     while (j+jj<8) {
         if (board[i][j+jj] === null) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i,j+jj]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i,j+jj]), canCastle, prevMove)) {
                 possibleMoves.push([i, j+jj]);
                 jj++;
             } else {
                 jj++;
                 if (board[i][j+jj]!== undefined && board[i][j+jj]!== null && board[i][j+jj].split('')[0] !== color) {
-                    if (withoutJeopardize || jeopardize(board, color, from, toStd([i,j+jj]), canCastle)) {
+                    if (withoutJeopardize || jeopardize(board, color, from, toStd([i,j+jj]), canCastle, prevMove)) {
                         possibleMoves.push([i, j+jj]);
                     }
                 }
@@ -220,7 +244,7 @@ const getRookMoves = (color, from, board, canCastle, withoutJeopardize) => {
             }
         } else {
             if (board[i][j+jj].split('')[0] !== color) {
-                if (withoutJeopardize || jeopardize(board, color, from, toStd([i,j+jj]), canCastle)) {
+                if (withoutJeopardize || jeopardize(board, color, from, toStd([i,j+jj]), canCastle, prevMove)) {
                     possibleMoves.push([i, j+jj]);
                 }
             }
@@ -231,7 +255,7 @@ const getRookMoves = (color, from, board, canCastle, withoutJeopardize) => {
     return possibleMoves;
 }
 
-const getKnightMoves = (color,from, board, canCastle, withoutJeopardize) => {
+const getKnightMoves = (color,from, board, canCastle, prevMove, withoutJeopardize) => {
     let possibleMoves = [];
 
     let i,j;
@@ -241,7 +265,7 @@ const getKnightMoves = (color,from, board, canCastle, withoutJeopardize) => {
     // i-2, j-1
     if (i-2>=0 && i-2<8 && j-1>=0 && j-1<8) {
         if (board[i-2][j-1] === null || board[i-2][j-1].split('')[0] !== color) { 
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i-2,j-1]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i-2,j-1]), canCastle, prevMove)) {
                 possibleMoves.push([i-2, j-1]);
             }
         }
@@ -249,7 +273,7 @@ const getKnightMoves = (color,from, board, canCastle, withoutJeopardize) => {
     // i-2, j+1
     if (i-2>=0 && i-2<8 && j+1>=0 && j+1<8) {
         if (board[i-2][j+1] === null || board[i-2][j+1].split('')[0] !== color) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i-2,j+1]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i-2,j+1]), canCastle, prevMove)) {
                 possibleMoves.push([i-2, j+1]);
             }
         }
@@ -257,7 +281,7 @@ const getKnightMoves = (color,from, board, canCastle, withoutJeopardize) => {
     // j+2, i-1
     if (i-1>=0 && i-1<8 && j+2>=0 && j+2<8) {
         if (board[i-1][j+2] === null || board[i-1][j+2].split('')[0] !== color) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i-1,j+2]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i-1,j+2]), canCastle, prevMove)) {
                 possibleMoves.push([i-1, j+2]);
             }
         }
@@ -265,7 +289,7 @@ const getKnightMoves = (color,from, board, canCastle, withoutJeopardize) => {
     // j+2, i+1
     if (i+1>=0 && i+1<8 && j+2>=0 && j+2<8) {
         if (board[i+1][j+2] === null || board[i+1][j+2].split('')[0] !== color) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+1,j+2]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+1,j+2]), canCastle, prevMove)) {
                 possibleMoves.push([i+1, j+2]);
             }
         }
@@ -273,7 +297,7 @@ const getKnightMoves = (color,from, board, canCastle, withoutJeopardize) => {
     // i+2, j+1
     if (i+2>=0 && i+2<8 && j+1>=0 && j+1<8) {
         if (board[i+2][j+1] === null || board[i+2][j+1].split('')[0] !== color) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+2,j+1]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+2,j+1]), canCastle, prevMove)) {
                 possibleMoves.push([i+2, j+1]);
             }
         }
@@ -281,7 +305,7 @@ const getKnightMoves = (color,from, board, canCastle, withoutJeopardize) => {
     // i+2, j-1
     if (i+2>=0 && i+2<8 && j-1>=0 && j-1<8) {
         if (board[i+2][j-1] === null || board[i+2][j-1].split('')[0] !== color) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+2,j-1]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+2,j-1]), canCastle, prevMove)) {
                 possibleMoves.push([i+2, j-1]);
             }
         }
@@ -289,7 +313,7 @@ const getKnightMoves = (color,from, board, canCastle, withoutJeopardize) => {
     // j-2, i+1
     if (i+1>=0 && i+1<8 && j-2>=0 && j-2<8) {
         if (board[i+1][j-2] === null || board[i+1][j-2].split('')[0] !== color) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+1,j-2]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+1,j-2]), canCastle, prevMove)) {
                 possibleMoves.push([i+1, j-2]);
             }
         }
@@ -297,7 +321,7 @@ const getKnightMoves = (color,from, board, canCastle, withoutJeopardize) => {
     // j-2, i-1
     if (i-1>=0 && i-1<8 && j-2>=0 && j-2<8) {
         if (board[i-1][j-2] === null || board[i-1][j-2].split('')[0] !== color) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i-1,j-2]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i-1,j-2]), canCastle, prevMove)) {
                 possibleMoves.push([i-1, j-2]);
             }
         }
@@ -306,7 +330,7 @@ const getKnightMoves = (color,from, board, canCastle, withoutJeopardize) => {
     return possibleMoves;
 }
 
-const getBishopMoves = (color, from, board, canCastle, withoutJeopardize) => {
+const getBishopMoves = (color, from, board, canCastle, prevMove, withoutJeopardize) => {
     let possibleMoves = [];
     // check all 4 diagonals
     let i,j;
@@ -318,7 +342,7 @@ const getBishopMoves = (color, from, board, canCastle, withoutJeopardize) => {
 
     while (i+ii>=0 && j+jj<8) {
         if (board[i+ii][j+jj] === null) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle, prevMove)) {
                 possibleMoves.push([i+ii, j+jj]);
                 ii--;
                 jj++;
@@ -329,7 +353,7 @@ const getBishopMoves = (color, from, board, canCastle, withoutJeopardize) => {
                     break;
                 }
                 if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj]!== null && board[i+ii][j+jj].split('')[0] !== color) {
-                    if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle)) {
+                    if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle, prevMove)) {
                         possibleMoves.push([i+ii, j+jj]);
                     }
                 }
@@ -337,7 +361,7 @@ const getBishopMoves = (color, from, board, canCastle, withoutJeopardize) => {
             }
         } else {
             if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj].split('')[0] !== color) {
-                if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle)) {
+                if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle, prevMove)) {
                     possibleMoves.push([i+ii, j+jj]);
                 }
             }
@@ -350,7 +374,7 @@ const getBishopMoves = (color, from, board, canCastle, withoutJeopardize) => {
 
     while (i+ii>=0 && j+jj>=0) {
         if (board[i+ii][j+jj] === null) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle, prevMove)) {
                 possibleMoves.push([i+ii, j+jj]);
                 ii--;
                 jj--;
@@ -362,7 +386,7 @@ const getBishopMoves = (color, from, board, canCastle, withoutJeopardize) => {
                 }
 
                 if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj]!== null && board[i+ii][j+jj].split('')[0] !== color) {
-                    if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle)) {
+                    if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle, prevMove)) {
                         possibleMoves.push([i+ii, j+jj]);
                     }
                 }
@@ -370,7 +394,7 @@ const getBishopMoves = (color, from, board, canCastle, withoutJeopardize) => {
             }
         } else {
             if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj].split('')[0] !== color) {
-                if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle)) {
+                if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle, prevMove)) {
                     possibleMoves.push([i+ii, j+jj]);
                 }
             }
@@ -384,7 +408,7 @@ const getBishopMoves = (color, from, board, canCastle, withoutJeopardize) => {
 
     while (i+ii<8 && j+jj<8) {
         if (board[i+ii][j+jj] === null) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle, prevMove)) {
                 possibleMoves.push([i+ii, j+jj]);
                 ii++;
                 jj++;
@@ -395,7 +419,7 @@ const getBishopMoves = (color, from, board, canCastle, withoutJeopardize) => {
                     break;
                 }
                 if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj]!== null && board[i+ii][j+jj].split('')[0] !== color) {
-                    if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle)) {
+                    if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle, prevMove)) {
                         possibleMoves.push([i+ii, j+jj]);
                     }
                 }
@@ -403,7 +427,7 @@ const getBishopMoves = (color, from, board, canCastle, withoutJeopardize) => {
             }
         } else {
             if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj].split('')[0] !== color) {
-                if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle)) {
+                if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle, prevMove)) {
                     possibleMoves.push([i+ii, j+jj]);
                 }
             }
@@ -417,7 +441,7 @@ const getBishopMoves = (color, from, board, canCastle, withoutJeopardize) => {
 
     while (i+ii<8 && j+jj>=0) {
         if (board[i+ii][j+jj] === null) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle, prevMove)) {
                 possibleMoves.push([i+ii, j+jj]);
                 ii++;
                 jj--;
@@ -428,7 +452,7 @@ const getBishopMoves = (color, from, board, canCastle, withoutJeopardize) => {
                     break;
                 }
                 if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj]!== null && board[i+ii][j+jj].split('')[0] !== color) {
-                    if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle)) {
+                    if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle, prevMove)) {
                         possibleMoves.push([i+ii, j+jj]);
                     }
                 }
@@ -436,7 +460,7 @@ const getBishopMoves = (color, from, board, canCastle, withoutJeopardize) => {
             }
         } else {
             if (board[i+ii][j+jj]!== undefined && board[i+ii][j+jj].split('')[0] !== color) {
-                if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle)) {
+                if (withoutJeopardize || jeopardize(board, color, from, toStd([i+ii,j+jj]), canCastle, prevMove)) {
                     possibleMoves.push([i+ii, j+jj]);
                 }
             }
@@ -447,18 +471,18 @@ const getBishopMoves = (color, from, board, canCastle, withoutJeopardize) => {
     return possibleMoves;
 }
 
-const getQueenMoves = (color, from, board, canCastle, withoutJeopardize) => {
-    return getRookMoves(color, from, board, canCastle, withoutJeopardize).concat(getBishopMoves(color, from, board, canCastle, withoutJeopardize));
+const getQueenMoves = (color, from, board, canCastle, prevMove, withoutJeopardize) => {
+    return getRookMoves(color, from, board, canCastle, prevMove, withoutJeopardize).concat(getBishopMoves(color, from, board, canCastle, prevMove, withoutJeopardize));
 }
 
-const getKingMoves = (color, from, board, canCastle, withoutJeopardize) => {
+const getKingMoves = (color, from, board, canCastle, prevMove, withoutJeopardize) => {
     let possibleMoves = [];
     let i,j;
     [i,j] = toArr(from);
 
     if (i-1>=0) {
         if (board[i-1][j] === null || (board[i-1][j]!== undefined && board[i-1][j].split('')[0] !== color)) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i-1,j]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i-1,j]), canCastle, prevMove)) {
                 possibleMoves.push([i-1, j]);
             }
         }
@@ -466,7 +490,7 @@ const getKingMoves = (color, from, board, canCastle, withoutJeopardize) => {
 
     if (i-1>=0 && j+1>=0) {
         if (board[i-1][j+1] === null ||  (board[i-1][j+1]!== undefined && board[i-1][j+1].split('')[0] !== color)) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i-1,j+1]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i-1,j+1]), canCastle, prevMove)) {
                 possibleMoves.push([i-1, j+1]);
             }
         }
@@ -474,7 +498,7 @@ const getKingMoves = (color, from, board, canCastle, withoutJeopardize) => {
 
     if (j+1>=0) {
         if (board[i][j+1] === null || (board[i][j+1]!== undefined && board[i][j+1].split('')[0] !== color)) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i,j+1]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i,j+1]), canCastle, prevMove)) {
                 possibleMoves.push([i, j+1]);
             }
         }
@@ -482,7 +506,7 @@ const getKingMoves = (color, from, board, canCastle, withoutJeopardize) => {
 
     if (i+1<8 && j+1<8) {
         if (board[i+1][j+1] === null || (board[i+1][j+1]!== undefined && board[i+1][j+1].split('')[0] !== color)) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+1,j+1]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+1,j+1]), canCastle, prevMove)) {
                 possibleMoves.push([i+1, j+1]);
             }
         }
@@ -490,7 +514,7 @@ const getKingMoves = (color, from, board, canCastle, withoutJeopardize) => {
 
     if (i+1<8) {
         if (board[i+1][j] === null || (board[i+1][j]!== undefined &&board[i+1][j].split('')[0] !== color)) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+1,j]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+1,j]), canCastle, prevMove)) {
                 possibleMoves.push([i+1, j]);
             }
         }
@@ -498,7 +522,7 @@ const getKingMoves = (color, from, board, canCastle, withoutJeopardize) => {
 
     if (i+1<8 && j-1>=0) {
         if (board[i+1][j-1] === null || (board[i+1][j-1]!== undefined && board[i+1][j-1].split('')[0] !== color)) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+1,j-1]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i+1,j-1]), canCastle, prevMove)) {
                 possibleMoves.push([i+1, j-1]);
             }
         }
@@ -506,7 +530,7 @@ const getKingMoves = (color, from, board, canCastle, withoutJeopardize) => {
 
     if (j-1>=0) {
         if (board[i][j-1] === null || (board[i][j-1]!== undefined && board[i][j-1].split('')[0] !== color)) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i,j-1]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i,j-1]), canCastle, prevMove)) {
                 possibleMoves.push([i, j-1]);
             }
         }
@@ -514,7 +538,7 @@ const getKingMoves = (color, from, board, canCastle, withoutJeopardize) => {
 
     if (i-1>=0 && j-1>=0) {
         if (board[i-1][j-1] === null || (board[i-1][j-1]!== undefined && board[i-1][j-1].split('')[0] !== color)) {
-            if (withoutJeopardize || jeopardize(board, color, from, toStd([i-1,j-1]), canCastle)) {
+            if (withoutJeopardize || jeopardize(board, color, from, toStd([i-1,j-1]), canCastle, prevMove)) {
                 possibleMoves.push([i-1, j-1]);
             }
         }
@@ -525,7 +549,7 @@ const getKingMoves = (color, from, board, canCastle, withoutJeopardize) => {
         // White short
         if (canCastle[0] === true) {
             if (board[7][5] === null && board[7][6] === null) {
-                if (withoutJeopardize || (jeopardize(board, color, from, toStd([7,6]), canCastle) && jeopardize(board, color, from, toStd([7,5]), canCastle) && jeopardize(board, color, from, toStd([7,4]), canCastle))) {
+                if (withoutJeopardize || (jeopardize(board, color, from, toStd([7,6]), canCastle, prevMove) && jeopardize(board, color, from, toStd([7,5]), canCastle, prevMove) && jeopardize(board, color, from, toStd([7,4]), canCastle, prevMove))) {
                     possibleMoves.push([7,6]);
                     possibleMoves.push([7,7]);
                 }
@@ -534,7 +558,7 @@ const getKingMoves = (color, from, board, canCastle, withoutJeopardize) => {
         // White long
         if (canCastle[1] === true) {
             if (board[7][1] === null && board[7][2] === null && board[7][3] === null) {
-                if (withoutJeopardize || (jeopardize(board, color, from, toStd([7,2]), canCastle) && jeopardize(board, color, from, toStd([7,3]), canCastle) && jeopardize(board, color, from, toStd([7,4]), canCastle))) {
+                if (withoutJeopardize || (jeopardize(board, color, from, toStd([7,2]), canCastle, prevMove) && jeopardize(board, color, from, toStd([7,3]), canCastle, prevMove) && jeopardize(board, color, from, toStd([7,4]), canCastle, prevMove))) {
                     possibleMoves.push([7,2]);                    
                     possibleMoves.push([7,0]);
                 }
@@ -545,7 +569,7 @@ const getKingMoves = (color, from, board, canCastle, withoutJeopardize) => {
         // Black short
         if (canCastle[2] === true) {
             if (board[0][5] === null && board[0][6] === null) {
-                if (withoutJeopardize || (jeopardize(board, color, from, toStd([0,6]), canCastle) && jeopardize(board, color, from, toStd([0,5]), canCastle) && jeopardize(board, color, from, toStd([0,4]), canCastle))) {
+                if (withoutJeopardize || (jeopardize(board, color, from, toStd([0,6]), canCastle, prevMove) && jeopardize(board, color, from, toStd([0,5]), canCastle, prevMove) && jeopardize(board, color, from, toStd([0,4]), canCastle, prevMove))) {
                     possibleMoves.push([0,6]);
                     possibleMoves.push([0,7]);
                 }
@@ -554,7 +578,7 @@ const getKingMoves = (color, from, board, canCastle, withoutJeopardize) => {
         // Black long
         if (canCastle[3] === true) {
             if (board[0][1] === null && board[0][2] === null && board[0][3] === null) {
-                if (withoutJeopardize || (jeopardize(board, color, from, toStd([0,2]), canCastle) && jeopardize(board, color, from, toStd([0,3]), canCastle) && jeopardize(board, color, from, toStd([0,4]), canCastle))) {
+                if (withoutJeopardize || (jeopardize(board, color, from, toStd([0,2]), canCastle, prevMove) && jeopardize(board, color, from, toStd([0,3]), canCastle, prevMove) && jeopardize(board, color, from, toStd([0,4]), canCastle, prevMove))) {
                     possibleMoves.push([0,2]);
                     possibleMoves.push([0,0]);
                 }
