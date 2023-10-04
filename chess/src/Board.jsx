@@ -85,6 +85,10 @@ function Board(props) {
                     if(board[toArr(LastMove.lastMove)[0]][toArr(LastMove.lastMove)[1]] === null && LastMove.lastMove[0] !== pieceMovement[1][0]) {
                         enPassant();
                     }
+                    // Promotion
+                    if (LastMove.lastMove[1] === "8" || LastMove.lastMove[1] === "1") {
+                        promotePawn("Queen", LastMove.lastMove);
+                    }
                 // Normal move
                 } else {
                     move(pieceMovement[1], LastMove.lastMove);
@@ -233,6 +237,17 @@ function Board(props) {
             }
             setBoard(oldBoard => [...oldBoard.slice(0,index_i), [...oldBoard[index_i].slice(0,index_j), null, ...oldBoard[index_i].slice(index_j+1)], ...oldBoard.slice(index_i+1)]);
         }
+    }
+
+    // Promote pawn
+    const promotePawn = (piece, to) => {
+        let index_i, index_j;
+        [index_i, index_j] = [toArr(to)[0], toArr(to)[1]];
+        const promotePiece = pieceMovement[0].split(' ')[0].toLowerCase()[0] + piece[0];
+
+        // Move piece by editing board
+        setBoard(oldBoard => [...oldBoard.slice(0,index_i), [...oldBoard[index_i].slice(0,index_j), promotePiece, ...oldBoard[index_i].slice(index_j+1)], ...oldBoard.slice(index_i+1)]);
+        
     }
 
 
